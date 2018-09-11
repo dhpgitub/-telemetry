@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Boot prometheus and grafana
+#
+# usage:
+# ./servicemesh-telemetry
+#
+
+
+PUBLIC_PORT="${PUBLIC_PORT:-3000}"
+STATS_PORT="${STATS_PORT:-9191}"
+SCRAPE_INTERVAL="${SCRAPE_INTERVAL:-30s}"
+
+#
+# init grafana
+#
+
+grafana_ini=$(cat <<EOF
+[auth.anonymous]
+enabled = true
+org_role = Editor
+
+[dashboards.json]
+enabled = true
+path = /etc/grafana/dashboards
+
+[server]
+http_port = $PUBLIC_PORT
+EOF
+)
+
+#printf "%s\n" "$grafana_ini" > /etc/grafana/grafana.ini
+
+/run.sh &
+
+prometheus_data_source=$(cat <<EOF
+{
+  "access": "proxy",
+  "isDefault": true,
+  "jsonData": {"timeInterval": "$SCRAPE_INTERVAL"},
+  "name": "linkerd-metrics",
+  "type": "prometheus",
+  "url": "http://localhost:$STATS_PORT"
+}
+EOF
+)
+
+#
+# init prometheus, exec as pid 1
+#
+
+exec /bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/prometheus \
+  --web.console.libraries=/etc/prometheus/console_libraries \
+  --web.console.templates=/etc/prometheus/consoles \
+  --web.listen-address=:$STATS_PORT
