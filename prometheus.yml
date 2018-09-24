@@ -14,8 +14,8 @@ alerting:
 
 scrape_configs:
 
-  # linkerd metrics are exposed at the URL http://dhpxdockucpd1:32796/admin/metrics/prometheus
+
   - job_name: 'linkerd_metrics'
     metrics_path: '/admin/metrics/prometheus'
     static_configs:
-      - targets: ['dhpxdockucpd1:32796']  
+      - targets: ['servicemesh-linkerd:9990']  
